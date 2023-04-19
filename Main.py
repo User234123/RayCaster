@@ -50,7 +50,9 @@ class Block():
         self.spawnTimer = Timer()
         self.spawnTimer.Start()
     def Update(self):
+        #see if the block is going to produce enemys
         if self.char == "P":
+            #produce enemys on a timer
             if self.spawnTimer.End() > max(5,15 - player.score / 2):
                 enemyList.append(Enemy(self.x,self.y,"target")) 
                 self.spawnTimer = Timer()
@@ -178,7 +180,9 @@ class Partical():
         self.ay = -1000
         self.spawnTime = spawnTime
     def Update(self):
+        #apply graverty
         self.vy -= self.ay * spf
+        #apply verlocity
         self.x += self.vx * spf
         self.y += self.vy * spf
     def Draw(self):
@@ -256,7 +260,7 @@ class Timer():
         return time.time() - self.start
 
 FOV = math.pi / 2#90 degrees
-RES = screenx
+RES = int(screenx / 2)# a rays is cast for each pixel on the x axis
 
 player = Player(1,1)
 level1 = Level(map1)
@@ -265,12 +269,19 @@ levelList = [level1]
 
 levelCounter = 0
 
+#used to calculate the elapsed time over one frame
 timer = Timer()
+#initilise it to a value for the first frame
 spf = 1
+#The option the user has selected in the given menu
 pickedOption = 0
+#so objects in the distance dont look to dark
 BASE_LIGHT = 150
+#Cannot press button again untill it is released
+#this is needed for menus because it would be to hard to controll
 w_pressed = False
 s_pressed = False
+#initalize pygame fonts to defauls system font
 font = pygame.font.Font(None, int(screeny / 10))
 def DrawCenterText(txt, height, selected):
     if selected: c = (0,200,0)
@@ -293,8 +304,11 @@ def MainGame():
     currentLevel = levelList[levelCounter]
     pygame.display.set_caption("FPS: " + str(1/spf) + " player Health -> " + str(player.health))
     timer.Start()
+    #draws the sky
     pygame.draw.rect(window,(135, 206, 235),(0,0,screenx,screeny/2))
+    #draws the floor
     pygame.draw.rect(window,(202, 164, 114),(0,screeny/2,screenx,screeny/2))
+    #updates the event queue so pygame responds to input and screen movement
     pygame.event.pump()
     player.GetInput(levelList[0])
     if pygame.key.get_pressed()[pygame.K_SPACE]:
@@ -316,7 +330,9 @@ def MainGame():
     xDrawPos = 0
     drawLineWidth = int(screenx / RES)
     for i in range(RES):
+        #calculate angle of the ray
         theta = (i / RES * FOV) - (FOV / 2)
+        #cast the ray
         distance, blockId, eDist, eName, enemy = CastRay([player.x,player.y], theta + player.rotz, currentLevel, RAY_SPEED_BIG)
         #get block colour
         colour = blockList[blockId].colour
@@ -330,21 +346,27 @@ def MainGame():
         lighting += BASE_LIGHT
         lighting /= 255# normalize lighting between 0 and 1
         r,g,b = colour
+        #Actual performs the rendering to the screen
         pygame.draw.line(window,(r*lighting, g*lighting,b *lighting),[xDrawPos, -heightOfLine + screeny / 2],[xDrawPos, heightOfLine + screeny/2], drawLineWidth)
         #if enemy hit
         if eDist != None:
             if eDist != 0:
                 heightOfLine = min(2000, 1/ eDist) * (screeny / 4)
+                #draws enemy ontop of wall because bottem of the enemy is transparent and so the wall behind will still need to be drawn
                 pygame.draw.line(window,(255,enemy.health / 100 * 255,0),[xDrawPos, -heightOfLine + screeny / 2],[xDrawPos, heightOfLine + screeny/2], drawLineWidth)
         xDrawPos += drawLineWidth
+    #draw and update all the particals
     for p in particalList:
         p.Draw()
+    #draw the plays cross hair and other HUD info
     player.Draw()
+    #check is player is dead
     if player.health <= 0:
         DrawCenterText("YOU DIED", screeny / 2, False)
         DrawCenterText("Enter to restart", screeny / 2 + 50, False)
         if pygame.key.get_pressed()[pygame.K_RETURN]:
             ResetMainGame()
+    #displays the kill count to the player
     window.blit(font.render("Kill Count: " + str(player.score), True, (30,30,220)), (0,0))
     pygame.display.update()
     spf = timer.End()
@@ -394,6 +416,7 @@ def ControllsMenu():
 ResetMainGame()
 run = True
 while run:
+    #switch between the different menues
     match selectedMenu:
         case "ControllMenu":
             ControllsMenu()
@@ -401,6 +424,7 @@ while run:
             MainMenu()
         case "MainGame":
             MainGame()
+        #check for invalid menue name
         case _:
-            print("Did not match any cases -> ", selectedMenu)
+            raise Exception("Did not match any cases -> "+ selectedMenu)
     
