@@ -21,7 +21,7 @@ import time
 import random
 #creating window
 pygame.init()
-is_fullScreen = input("Would you like to lauch the game in full screen y/n")
+is_fullScreen = input("Would you like to lauch the game in full screen y/n -> ")
 if is_fullScreen != "y":
     screenx,screeny = 600,600
     window = pygame.display.set_mode((screenx,screeny))
